@@ -1,82 +1,69 @@
-# Define tables based on the SQL schema
-
-class Users(Base):
-    __tablename__ = 'Users'
-    user_id = Column(Integer, primary_key=True)
-    first_name = Column(String(100), nullable=False)
-    last_name = Column(String(100), nullable=False)
-    email = Column(String(150), unique=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
-    phone_number = Column(String(20))
-    address = Column(String(255))
-    city = Column(String(100))
-    country = Column(String(100))
-    postal_code = Column(String(20))
-    date_of_birth = Column(Date)
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
-
-
-class Locations(Base):
-    __tablename__ = 'Locations'
-    location_id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    address = Column(String(255), nullable=False)
-    city = Column(String(100), nullable=False)
-    country = Column(String(100), nullable=False)
-    postal_code = Column(String(20))
-    phone_number = Column(String(20))
-    opening_hours = Column(String(50))
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
-
-
-class Vehicles(Base):
-    __tablename__ = 'Vehicles'
-    vehicle_id = Column(Integer, primary_key=True)
-    model = Column(String(100), nullable=False)
-    brand = Column(String(100), nullable=False)
-    category = Column(String(50), nullable=False)
-    license_plate = Column(String(20), unique=True, nullable=False)
-    availability = Column(Boolean, default=True)
-    daily_rate = Column(DECIMAL(10, 2), nullable=False)
-    location_id = Column(Integer, ForeignKey('Locations.location_id'))
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
-
-
-class Reservations(Base):
-    __tablename__ = 'Reservations'
-    reservation_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('Users.user_id', ondelete="CASCADE"))
-    vehicle_id = Column(Integer, ForeignKey('Vehicles.vehicle_id', ondelete="SET NULL"))
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
-    total_price = Column(DECIMAL(10, 2), nullable=False)
-    status = Column(String(50), default='Pending')
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
-
-
-class Payments(Base):
-    __tablename__ = 'Payments'
-    payment_id = Column(Integer, primary_key=True)
-    reservation_id = Column(Integer, ForeignKey('Reservations.reservation_id', ondelete="CASCADE"))
-    amount = Column(DECIMAL(10, 2), nullable=False)
-    payment_date = Column(TIMESTAMP, nullable=False)
-    payment_method = Column(String(50))
-    status = Column(String(50), default='Completed')
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
-
-
-class Reviews(Base):
-    __tablename__ = 'Reviews'
-    review_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('Users.user_id', ondelete="CASCADE"))
-    vehicle_id = Column(Integer, ForeignKey('Vehicles.vehicle_id', ondelete="SET NULL"))
-    rating = Column(Integer)
-    comment = Column(Text)
-    created_at = Column(TIMESTAMP, nullable=False)
-    updated_at = Column(TIMESTAMP, nullable=False)
-
+CREATE TABLE Users (
+                       user_id SERIAL PRIMARY KEY,
+                       first_name VARCHAR(100) NOT NULL,
+                       last_name VARCHAR(100) NOT NULL,
+                       email VARCHAR(150) UNIQUE NOT NULL,
+                       password_hash VARCHAR(255) NOT NULL,
+                       phone_number VARCHAR(20),
+                       address VARCHAR(255),
+                       city VARCHAR(100),
+                       country VARCHAR(100),
+                       postal_code VARCHAR(20),
+                       date_of_birth DATE,
+                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Vehicles (
+                          vehicle_id SERIAL PRIMARY KEY,
+                          model VARCHAR(100) NOT NULL,
+                          brand VARCHAR(100) NOT NULL,
+                          category VARCHAR(50) NOT NULL,
+                          license_plate VARCHAR(20) UNIQUE NOT NULL,
+                          availability BOOLEAN DEFAULT TRUE,
+                          daily_rate DECIMAL(10, 2) NOT NULL,
+                          location_id INT REFERENCES Locations(location_id),
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Locations (
+                           location_id SERIAL PRIMARY KEY,
+                           name VARCHAR(100) NOT NULL,
+                           address VARCHAR(255) NOT NULL,
+                           city VARCHAR(100) NOT NULL,
+                           country VARCHAR(100) NOT NULL,
+                           postal_code VARCHAR(20),
+                           phone_number VARCHAR(20),
+                           opening_hours VARCHAR(50),
+                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Reservations (
+                              reservation_id SERIAL PRIMARY KEY,
+                              user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+                              vehicle_id INT REFERENCES Vehicles(vehicle_id) ON DELETE SET NULL,
+                              start_date DATE NOT NULL,
+                              end_date DATE NOT NULL,
+                              total_price DECIMAL(10, 2) NOT NULL,
+                              status VARCHAR(50) DEFAULT 'Pending',  -- Possible values: Pending, Confirmed, Cancelled
+                              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Payments (
+                          payment_id SERIAL PRIMARY KEY,
+                          reservation_id INT REFERENCES Reservations(reservation_id) ON DELETE CASCADE,
+                          amount DECIMAL(10, 2) NOT NULL,
+                          payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          payment_method VARCHAR(50),  -- Possible values: Credit Card, PayPal, etc.
+                          status VARCHAR(50) DEFAULT 'Completed',  -- Possible values: Completed, Pending, Failed
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Reviews (
+                         review_id SERIAL PRIMARY KEY,
+                         user_id INT REFERENCES Users(user_id) ON DELETE CASCADE,
+                         vehicle_id INT REFERENCES Vehicles(vehicle_id) ON DELETE SET NULL,
+                         rating INT CHECK (rating >= 1 AND rating <= 5),
+                         comment TEXT,
+                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
